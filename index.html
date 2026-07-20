@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sorteador de Times</title>
+<meta name="description" content="Monte times equilibrados de futebol a partir do nível dos jogadores.">
+<meta name="theme-color" content="#0F1E33">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sorteio">
+<style>
+  :root{
+    --bg-deep:#0F1E33;
+    --bg-pitch:#152847;
+    --bg-card:#1C355C;
+    --line:#2F4E7A;
+    --chalk:#F3F6FA;
+    --chalk-dim:#93A9C7;
+    --accent:#F2C14E;
+    --accent-ink:#1A1200;
+        --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 50% 8%, rgba(255,255,255,.05), transparent 60%),
+      var(--bg-deep);
+    color:var(--chalk);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:48px;
+  }
+  .field-lines{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.35; }
+  .wrap{ position:relative; z-index:1; max-width:640px; margin:0 auto; padding:0 18px; }
+
+  header{ padding:28px 0 18px; text-align:center; }
+  .whistle{ display:inline-block; margin-bottom:6px; }
+  h1{
+    font-size:30px; margin:0; letter-spacing:1px;
+    font-weight:800; text-transform:uppercase;
+    color:var(--chalk);
+  }
+  h1 span{ color:var(--accent); }
+  .subtitle{ margin:6px 0 0; color:var(--chalk-dim); font-size:14px; }
+
+  .panel{
+    background:var(--bg-pitch);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:16px;
+    box-shadow:var(--shadow);
+  }
+  .panel h2{
+    margin:0 0 12px; font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--chalk-dim); font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .panel h2 .count{
+    background:var(--accent); color:var(--accent-ink); border-radius:999px;
+    font-size:12px; padding:1px 8px; letter-spacing:0;
+  }
+  .panel h2 .subcount{ font-weight:600; color:var(--chalk-dim); font-size:11px; letter-spacing:0; text-transform:none; margin-left:auto; }
+
+  .quick-select{ display:flex; gap:8px; margin-bottom:10px; }
+  .quick-select button{
+    flex:1; background:var(--bg-card); border:1px solid var(--line); color:var(--chalk-dim);
+    padding:7px 0; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.5px;
+  }
+
+  .empty{ text-align:center; padding:26px 10px; color:var(--chalk-dim); font-size:14px; line-height:1.5; }
+  .empty .ball{ font-size:30px; display:block; margin-bottom:8px; }
+
+  .player-row{
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-card); border:1px solid var(--line);
+    border-radius:12px; padding:10px 12px; margin-bottom:8px;
+    transition:opacity .15s;
+  }
+  .player-row.off{ opacity:.45; }
+  .jersey{
+    flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+    background:var(--bg-deep); border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:13px; color:var(--chalk-dim); cursor:pointer;
+  }
+  .player-row:not(.off) .jersey{ border-color:var(--accent); color:var(--accent); }
+  .player-info{ flex:1 1 auto; min-width:0; }
+  .player-name{ font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stars{ margin-top:2px; font-size:12px; letter-spacing:2px; user-select:none; }
+  .star-btn{ background:none; border:none; padding:0 1px; font-size:15px; cursor:pointer; color:var(--chalk-dim); }
+  .star-btn.filled{ color:var(--accent); }
+  .remove-btn{
+    flex:0 0 auto; background:none; border:none; color:var(--chalk-dim);
+    font-size:20px; line-height:1; padding:6px; cursor:pointer; border-radius:8px;
+  }
+  .remove-btn:active{ background:rgba(255,255,255,.14); color:var(--chalk); }
+
+  .add-form{ display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+  .add-row{ display:flex; gap:8px; }
+  input[type="text"]{
+    flex:1; min-width:0; background:var(--bg-card); border:1px solid var(--line);
+    color:var(--chalk); border-radius:10px; padding:12px 14px; font-size:15px;
+  }
+  input[type="text"]::placeholder{ color:var(--chalk-dim); }
+  input[type="text"]:focus, .star-btn:focus-visible, button:focus-visible, .seg button:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  .level-picker{ display:flex; align-items:center; gap:6px; justify-content:center; }
+  .level-picker .label{ font-size:12px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:1px; margin-right:4px; }
+  .level-picker .star-btn{ font-size:22px; }
+
+  .btn{
+    border:none; border-radius:10px; padding:12px 16px; font-weight:800;
+    font-size:14px; text-transform:uppercase; letter-spacing:.5px; cursor:pointer;
+  }
+  .btn-add{ background:var(--accent); color:var(--accent-ink); white-space:nowrap; }
+  .btn-primary{
+    width:100%; background:var(--accent); color:var(--accent-ink);
+    font-size:17px; padding:16px; border-radius:14px; box-shadow:var(--shadow);
+  }
+  .btn-primary:disabled{ opacity:.4; }
+  .btn-ghost{
+    background:transparent; color:var(--chalk-dim); border:1px solid var(--line);
+    font-size:12px; padding:8px 12px;
+  }
+
+  .io-row{ display:flex; gap:8px; margin-top:12px; }
+  .io-row .btn-ghost{ flex:1; }
+
+  .seg{ display:flex; background:var(--bg-card); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; }
+  .seg button{
+    flex:1; background:none; border:none; color:var(--chalk-dim); padding:8px 0;
+    border-radius:8px; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .seg button.active{ background:var(--accent); color:var(--accent-ink); }
+
+  .results{ display:flex; flex-direction:column; gap:12px; }
+  .team-card{ background:var(--bg-card); border:1px solid var(--line); border-radius:14px; padding:14px; }
+  .team-card h3{
+    margin:0 0 10px; font-size:15px; text-transform:uppercase; letter-spacing:1px;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .team-card h3 .avg{ font-size:12px; color:var(--accent); font-weight:700; letter-spacing:0; text-transform:none; }
+  .team-card ul{ list-style:none; margin:0; padding:0; }
+  .team-card li{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px; }
+  .team-card li:last-child{ border-bottom:none; }
+  .team-card li .lvl{ color:var(--chalk-dim); }
+
+  .actions-row{ display:flex; gap:8px; margin-top:14px; }
+  .actions-row .btn{ flex:1; }
+
+  .install-tip{ font-size:12px; color:var(--chalk-dim); text-align:center; margin-top:18px; line-height:1.5; }
+  footer{ text-align:center; padding:20px 0 4px; color:var(--chalk-dim); font-size:11px; opacity:.6; }
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:13px;
+    padding:10px 18px; border-radius:999px; box-shadow:var(--shadow); opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:10;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<svg class="field-lines" viewBox="0 0 640 900" preserveAspectRatio="xMidYMin slice">
+  <line x1="0" y1="140" x2="640" y2="140" stroke="#2F4E7A" stroke-width="2"/>
+  <circle cx="320" cy="140" r="70" fill="none" stroke="#2F4E7A" stroke-width="2"/>
+</svg>
+
+<div class="wrap">
+  <header>
+    <span class="whistle">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 8h6l3-3 3 3h5a3 3 0 0 1 0 6h-1.1a5 5 0 1 1-9.8-2H8L5 12H2V8Z" stroke="#F2C14E" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="14.5" cy="12.5" r="2.2" stroke="#F2C14E" stroke-width="1.6"/>
+      </svg>
+    </span>
+    <h1>Sortea<span>dor</span> de Times</h1>
+    <p class="subtitle">Elenco fixo, só marcar quem joga hoje</p>
+  </header>
+
+  <section class="panel">
+    <h2>Elenco <span class="count" id="playerCount">0</span><span class="subcount" id="playingCount"></span></h2>
+    <div class="quick-select">
+      <button type="button" id="selectAllBtn">Marcar todos</button>
+      <button type="button" id="selectNoneBtn">Desmarcar todos</button>
+    </div>
+    <div id="playerList"></div>
+    <div id="emptyState" class="empty">
+      <span class="ball">⚽</span>
+      Nenhum jogador ainda.<br>Adicione abaixo ou importe sua lista em .txt.
+    </div>
+
+    <div class="add-form">
+      <div class="level-picker" id="newLevelPicker">
+        <span class="label">Nível</span>
+      </div>
+      <div class="add-row">
+        <input type="text" id="nameInput" placeholder="Nome do jogador" maxlength="24">
+        <button class="btn btn-add" id="addBtn">Adicionar</button>
+      </div>
+    </div>
+
+    <div class="io-row">
+      <button class="btn btn-ghost" id="importBtn">Importar .txt</button>
+      <button class="btn btn-ghost" id="exportBtn">Exportar .txt</button>
+    </div>
+    <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
+  </section>
+
+  <section class="panel">
+    <h2>Times</h2>
+    <div class="seg" id="teamSeg"></div>
+  </section>
+
+  <button class="btn btn-primary" id="sortearBtn">Sortear Times</button>
+
+  <section id="resultsSection" style="display:none; margin-top:18px;">
+    <div class="results" id="resultsList"></div>
+    <div class="actions-row">
+      <button class="btn btn-ghost" id="reshuffleBtn">Sortear de novo</button>
+      <button class="btn btn-ghost" id="clearResultsBtn">Ocultar times</button>
+    </div>
+  </section>
+
+  <p class="install-tip" id="installTip"></p>
+  <footer>Feito para o rachão de sexta ⚽</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "sorteador-times-state-v2";
+
+  var state = {
+    players: [], // {id, name, level, selected}
+    numTeams: 2,
+    newLevel: 3
+  };
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.players)){
+          state.players = parsed.players.map(function(p){
+            return { id:p.id, name:p.name, level:p.level||3, selected: p.selected !== false };
+          });
+          state.numTeams = parsed.numTeams || 2;
+          return;
+        }
+      }
+      // migração de versão antiga (v1), se existir
+      var old = localStorage.getItem("sorteador-times-state-v1");
+      if(old){
+        var op = JSON.parse(old);
+        if(op && Array.isArray(op.players)){
+          state.players = op.players.map(function(p){ return {id:p.id, name:p.name, level:p.level||3, selected:true}; });
+          state.numTeams = op.numTeams || 2;
+        }
+      }
+    }catch(e){}
+  }
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ players: state.players, numTeams: state.numTeams }));
+    }catch(e){}
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._tm);
+    showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+  }
+
+  function starsHtml(level, playerId){
+    var html = "";
+    for(var i=1;i<=5;i++){
+      var filled = i <= level;
+      html += '<button type="button" class="star-btn' + (filled?' filled':'') + '" ' +
+              'data-player="' + playerId + '" data-level="' + i + '" aria-label="Nível ' + i + '">' +
+              (filled ? '★' : '☆') + '</button>';
+    }
+    return html;
+  }
+
+  function renderNewLevelPicker(){
+    var el = document.getElementById("newLevelPicker");
+    var html = '<span class="label">Nível</span>';
+    for(var i=1;i<=5;i++){
+      var filled = i <= state.newLevel;
+      html += '<button type="button" class="star-btn' + (filled?' filled':'') + '" data-newlevel="' + i + '" aria-label="Nível ' + i + '">' + (filled?'★':'☆') + '</button>';
+    }
+    el.innerHTML = html;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function renderPlayers(){
+    var list = document.getElementById("playerList");
+    var empty = document.getElementById("emptyState");
+    var count = document.getElementById("playerCount");
+    var playingCount = document.getElementById("playingCount");
+    count.textContent = state.players.length;
+    var selectedN = state.players.filter(function(p){ return p.selected; }).length;
+    playingCount.textContent = state.players.length ? (selectedN + " jogando hoje") : "";
+
+    if(state.players.length === 0){
+      list.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+
+    var html = "";
+    state.players.forEach(function(p, idx){
+      html += '<div class="player-row' + (p.selected ? '' : ' off') + '">' +
+        '<div class="jersey" data-toggle="' + p.id + '" role="button" aria-pressed="' + p.selected + '" aria-label="Joga hoje">' + (idx+1) + '</div>' +
+        '<div class="player-info">' +
+          '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
+          '<div class="stars">' + starsHtml(p.level, p.id) + '</div>' +
+        '</div>' +
+        '<button type="button" class="remove-btn" data-remove="' + p.id + '" aria-label="Remover ' + escapeHtml(p.name) + '">✕</button>' +
+      '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function renderTeamSeg(){
+    var seg = document.getElementById("teamSeg");
+    var options = [2,3,4,5,6];
+    var html = "";
+    options.forEach(function(n){
+      html += '<button type="button" data-teams="' + n + '" class="' + (state.numTeams===n?'active':'') + '">' + n + '</button>';
+    });
+    seg.innerHTML = html;
+  }
+
+  function selectedPlayers(){
+    return state.players.filter(function(p){ return p.selected; });
+  }
+
+  function updateSortearBtn(){
+    var btn = document.getElementById("sortearBtn");
+    var n = selectedPlayers().length;
+    btn.disabled = n < state.numTeams;
+    btn.textContent = n < state.numTeams ? "Marque mais jogadores" : "Sortear Times";
+  }
+
+  function sortearTimes(){
+    var n = state.numTeams;
+    var teams = [];
+    for(var i=0;i<n;i++) teams.push({ name: "Time " + String.fromCharCode(65+i), players: [], total: 0 });
+
+    var pool = selectedPlayers();
+    var byLevel = {};
+    pool.forEach(function(p){
+      byLevel[p.level] = byLevel[p.level] || [];
+      byLevel[p.level].push(p);
+    });
+    var ordered = [];
+    Object.keys(byLevel).sort(function(a,b){ return b-a; }).forEach(function(lvl){
+      var arr = byLevel[lvl].slice();
+      for(var i=arr.length-1;i>0;i--){
+        var j = Math.floor(Math.random()*(i+1));
+        var tmp = arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+      }
+      ordered = ordered.concat(arr);
+    });
+
+    var dir = 1, teamIdx = 0;
+    ordered.forEach(function(p){
+      teams[teamIdx].players.push(p);
+      teams[teamIdx].total += p.level;
+      if(dir === 1){
+        teamIdx++;
+        if(teamIdx === n){ teamIdx = n-1; dir = -1; }
+      } else {
+        teamIdx--;
+        if(teamIdx === -1){ teamIdx = 0; dir = 1; }
+      }
+    });
+    return teams;
+  }
+
+  function renderResults(teams){
+    var section = document.getElementById("resultsSection");
+    var list = document.getElementById("resultsList");
+    var html = "";
+    teams.forEach(function(t){
+      var avg = t.players.length ? (t.total / t.players.length).toFixed(1) : "0.0";
+      html += '<div class="team-card">' +
+        '<h3>' + t.name + ' <span class="avg">média ' + avg + '</span></h3>' +
+        '<ul>' + t.players.map(function(p){
+          return '<li><span>' + escapeHtml(p.name) + '</span><span class="lvl">' + '★'.repeat(p.level) + '</span></li>';
+        }).join("") + '</ul>' +
+      '</div>';
+    });
+    list.innerHTML = html;
+    section.style.display = "block";
+  }
+
+  function findByNameCI(name){
+    var lower = name.trim().toLowerCase();
+    return state.players.find(function(p){ return p.name.trim().toLowerCase() === lower; });
+  }
+
+  function parseImportLine(line){
+    line = line.trim();
+    if(!line) return null;
+    var name, level = 3;
+    if(line.indexOf(",") !== -1){
+      var parts = line.split(",");
+      name = parts[0].trim();
+      var lvl = parseInt(parts[1], 10);
+      if(!isNaN(lvl) && lvl>=1 && lvl<=5) level = lvl;
+    } else {
+      var m = line.match(/(\d)\s*$/);
+      if(m){
+        var n = parseInt(m[1], 10);
+        if(n>=1 && n<=5){ level = n; name = line.slice(0, m.index); }
+      }
+      if(name === undefined) name = line;
+      name = name.replace(/[\-\(\)\s]+$/,'').trim();
+    }
+    name = name.replace(/^[\-\(\)\s]+/,'').trim();
+    if(!name) return null;
+    return { name: name, level: level };
+  }
+
+  function importText(text){
+    var lines = text.split(/\r?\n/);
+    var added = 0, updated = 0;
+    lines.forEach(function(line){
+      var parsed = parseImportLine(line);
+      if(!parsed) return;
+      var existing = findByNameCI(parsed.name);
+      if(existing){
+        existing.level = parsed.level;
+        updated++;
+      } else {
+        state.players.push({ id: uid(), name: parsed.name, level: parsed.level, selected: true });
+        added++;
+      }
+    });
+    saveState();
+    renderPlayers();
+    renderTeamSeg();
+    updateSortearBtn();
+    showToast(added + " adicionado(s), " + updated + " atualizado(s)");
+  }
+
+  function exportText(){
+    var lines = state.players.map(function(p){ return p.name + "," + p.level; });
+    var blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "elenco-times.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // eventos
+  document.getElementById("addBtn").addEventListener("click", function(){
+    var input = document.getElementById("nameInput");
+    var name = input.value.trim();
+    if(!name) { input.focus(); return; }
+    var existing = findByNameCI(name);
+    if(existing){
+      existing.level = state.newLevel;
+      existing.selected = true;
+    } else {
+      state.players.push({ id: uid(), name: name, level: state.newLevel, selected: true });
+    }
+    input.value = "";
+    state.newLevel = 3;
+    renderNewLevelPicker();
+    saveState();
+    renderPlayers();
+    renderTeamSeg();
+    updateSortearBtn();
+    input.focus();
+  });
+
+  document.getElementById("nameInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ document.getElementById("addBtn").click(); }
+  });
+
+  document.getElementById("newLevelPicker").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-newlevel]");
+    if(!btn) return;
+    state.newLevel = parseInt(btn.getAttribute("data-newlevel"), 10);
+    renderNewLevelPicker();
+  });
+
+  document.getElementById("playerList").addEventListener("click", function(e){
+    var toggle = e.target.closest("[data-toggle]");
+    if(toggle){
+      var tid = toggle.getAttribute("data-toggle");
+      var tp = state.players.find(function(x){ return x.id === tid; });
+      if(tp){ tp.selected = !tp.selected; saveState(); renderPlayers(); updateSortearBtn(); }
+      return;
+    }
+    var starBtn = e.target.closest("[data-player]");
+    if(starBtn){
+      var pid = starBtn.getAttribute("data-player");
+      var lvl = parseInt(starBtn.getAttribute("data-level"), 10);
+      var p = state.players.find(function(x){ return x.id === pid; });
+      if(p){ p.level = lvl; saveState(); renderPlayers(); }
+      return;
+    }
+    var rmBtn = e.target.closest("[data-remove]");
+    if(rmBtn){
+      var rid = rmBtn.getAttribute("data-remove");
+      state.players = state.players.filter(function(x){ return x.id !== rid; });
+      saveState();
+      renderPlayers();
+      updateSortearBtn();
+    }
+  });
+
+  document.getElementById("selectAllBtn").addEventListener("click", function(){
+    state.players.forEach(function(p){ p.selected = true; });
+    saveState(); renderPlayers(); updateSortearBtn();
+  });
+  document.getElementById("selectNoneBtn").addEventListener("click", function(){
+    state.players.forEach(function(p){ p.selected = false; });
+    saveState(); renderPlayers(); updateSortearBtn();
+  });
+
+  document.getElementById("teamSeg").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-teams]");
+    if(!btn) return;
+    state.numTeams = parseInt(btn.getAttribute("data-teams"), 10);
+    saveState();
+    renderTeamSeg();
+    updateSortearBtn();
+  });
+
+  document.getElementById("sortearBtn").addEventListener("click", function(){
+    if(selectedPlayers().length < state.numTeams) return;
+    var teams = sortearTimes();
+    renderResults(teams);
+    document.getElementById("resultsSection").scrollIntoView({behavior:"smooth", block:"start"});
+  });
+
+  document.getElementById("reshuffleBtn").addEventListener("click", function(){
+    var teams = sortearTimes();
+    renderResults(teams);
+  });
+
+  document.getElementById("clearResultsBtn").addEventListener("click", function(){
+    document.getElementById("resultsSection").style.display = "none";
+  });
+
+  document.getElementById("importBtn").addEventListener("click", function(){
+    document.getElementById("fileInput").click();
+  });
+  document.getElementById("fileInput").addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){ importText(String(ev.target.result)); };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+  document.getElementById("exportBtn").addEventListener("click", exportText);
+
+  // dica de instalação (iOS não tem beforeinstallprompt)
+  var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  var isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  if(!isStandalone){
+    document.getElementById("installTip").textContent = isIOS
+      ? "Dica: toque em Compartilhar e depois em \"Adicionar à Tela de Início\" para instalar."
+      : "Dica: use o menu do navegador e escolha \"Adicionar à tela inicial\" para instalar.";
+  }
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+
+  // init
+  loadState();
+  renderNewLevelPicker();
+  renderPlayers();
+  renderTeamSeg();
+  updateSortearBtn();
+})();
+</script>
+</body>
+</html>

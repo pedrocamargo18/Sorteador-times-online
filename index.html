@@ -866,10 +866,7 @@
         }
 
         function boot() {
-          if (
-            !FIREBASE_CONFIG.apiKey ||
-            FIREBASE_CONFIG.apiKey === "AIzaSyCo4F-OQIwCFJuwjkIvCkJNr4qyDcC8iYk"
-          ) {
+          if (!FIREBASE_CONFIG.apiKey) {
             document.getElementById("firebaseWarning").style.display = "block";
             return;
           }

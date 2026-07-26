@@ -1,4 +1,4 @@
-const CACHE_NAME = "sorteador-times-v4";
+const CACHE_NAME = "sorteador-times-v5";
 const ASSETS = [
   "./index.html",
   "./manifest.json",

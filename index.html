@@ -1,611 +1,1794 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sorteador de Times</title>
-<meta name="description" content="Monte times equilibrados de futebol a partir do nível dos jogadores.">
-<meta name="theme-color" content="#0F1E33">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sorteio">
-<style>
-  :root{
-    --bg-deep:#0F1E33;
-    --bg-pitch:#152847;
-    --bg-card:#1C355C;
-    --line:#2F4E7A;
-    --chalk:#F3F6FA;
-    --chalk-dim:#93A9C7;
-    --accent:#F2C14E;
-    --accent-ink:#1A1200;
-        --shadow: 0 8px 24px rgba(0,0,0,.35);
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:
-      radial-gradient(circle at 50% 8%, rgba(255,255,255,.05), transparent 60%),
-      var(--bg-deep);
-    color:var(--chalk);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    min-height:100vh;
-    padding-bottom:48px;
-  }
-  .field-lines{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.35; }
-  .wrap{ position:relative; z-index:1; max-width:640px; margin:0 auto; padding:0 18px; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Sorteador de Times</title>
+    <meta
+      name="description"
+      content="Monte times equilibrados de futebol com elenco compartilhado, avaliações e votação de craque/bagre."
+    />
+    <meta name="theme-color" content="#0F1E33" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Sorteio" />
+    <style>
+      :root {
+        --bg-deep: #0f1e33;
+        --bg-pitch: #152847;
+        --bg-card: #1c355c;
+        --line: #2f4e7a;
+        --chalk: #f3f6fa;
+        --chalk-dim: #93a9c7;
+        --accent: #f2c14e;
+        --accent-ink: #1a1200;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background:
+          radial-gradient(
+            circle at 50% 8%,
+            rgba(255, 255, 255, 0.05),
+            transparent 60%
+          ),
+          var(--bg-deep);
+        color: var(--chalk);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        min-height: 100vh;
+        padding-bottom: 48px;
+      }
+      .field-lines {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.35;
+      }
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 0 18px;
+      }
 
-  header{ padding:28px 0 18px; text-align:center; }
-  .whistle{ display:inline-block; margin-bottom:6px; }
-  h1{
-    font-size:30px; margin:0; letter-spacing:1px;
-    font-weight:800; text-transform:uppercase;
-    color:var(--chalk);
-  }
-  h1 span{ color:var(--accent); }
-  .subtitle{ margin:6px 0 0; color:var(--chalk-dim); font-size:14px; }
+      header {
+        padding: 28px 0 18px;
+        text-align: center;
+      }
+      .whistle {
+        display: inline-block;
+        margin-bottom: 6px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0;
+        letter-spacing: 1px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--chalk);
+      }
+      h1 span {
+        color: var(--accent);
+      }
+      .subtitle {
+        margin: 6px 0 0;
+        color: var(--chalk-dim);
+        font-size: 14px;
+      }
 
-  .panel{
-    background:var(--bg-pitch);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:16px;
-    margin-bottom:16px;
-    box-shadow:var(--shadow);
-  }
-  .panel h2{
-    margin:0 0 12px; font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--chalk-dim); font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-  }
-  .panel h2 .count{
-    background:var(--accent); color:var(--accent-ink); border-radius:999px;
-    font-size:12px; padding:1px 8px; letter-spacing:0;
-  }
-  .panel h2 .subcount{ font-weight:600; color:var(--chalk-dim); font-size:11px; letter-spacing:0; text-transform:none; margin-left:auto; }
+      .panel {
+        background: var(--bg-pitch);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+      }
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 13px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--chalk-dim);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .panel h2 .count {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-radius: 999px;
+        font-size: 12px;
+        padding: 1px 8px;
+        letter-spacing: 0;
+      }
 
-  .quick-select{ display:flex; gap:8px; margin-bottom:10px; }
-  .quick-select button{
-    flex:1; background:var(--bg-card); border:1px solid var(--line); color:var(--chalk-dim);
-    padding:7px 0; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.5px;
-  }
+      .quick-select {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .quick-select button {
+        flex: 1;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        color: var(--chalk-dim);
+        padding: 7px 0;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
 
-  .empty{ text-align:center; padding:26px 10px; color:var(--chalk-dim); font-size:14px; line-height:1.5; }
-  .empty .ball{ font-size:30px; display:block; margin-bottom:8px; }
+      .empty {
+        text-align: center;
+        padding: 26px 10px;
+        color: var(--chalk-dim);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .empty .ball {
+        font-size: 30px;
+        display: block;
+        margin-bottom: 8px;
+      }
 
-  .player-row{
-    display:flex; align-items:center; gap:12px;
-    background:var(--bg-card); border:1px solid var(--line);
-    border-radius:12px; padding:10px 12px; margin-bottom:8px;
-    transition:opacity .15s;
-  }
-  .player-row.off{ opacity:.45; }
-  .jersey{
-    flex:0 0 auto; width:34px; height:34px; border-radius:50%;
-    background:var(--bg-deep); border:2px solid var(--line);
-    display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:13px; color:var(--chalk-dim); cursor:pointer;
-  }
-  .player-row:not(.off) .jersey{ border-color:var(--accent); color:var(--accent); }
-  .player-info{ flex:1 1 auto; min-width:0; }
-  .player-name{ font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .stars{ margin-top:2px; font-size:12px; letter-spacing:2px; user-select:none; }
-  .star-btn{ background:none; border:none; padding:0 1px; font-size:15px; cursor:pointer; color:var(--chalk-dim); }
-  .star-btn.filled{ color:var(--accent); }
-  .remove-btn{
-    flex:0 0 auto; background:none; border:none; color:var(--chalk-dim);
-    font-size:20px; line-height:1; padding:6px; cursor:pointer; border-radius:8px;
-  }
-  .remove-btn:active{ background:rgba(255,255,255,.14); color:var(--chalk); }
+      .player-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        transition: opacity 0.15s;
+      }
+      .player-row.off {
+        opacity: 0.45;
+      }
+      .jersey {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--bg-deep);
+        border: 2px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+        color: var(--chalk-dim);
+        cursor: pointer;
+        overflow: hidden;
+      }
+      .player-row:not(.off) .jersey {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .jersey img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .player-info {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .player-name {
+        font-weight: 700;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .stars {
+        margin-top: 2px;
+        font-size: 12px;
+        letter-spacing: 2px;
+        user-select: none;
+        color: var(--chalk-dim);
+      }
+      .star-btn {
+        background: none;
+        border: none;
+        padding: 0 1px;
+        font-size: 15px;
+        cursor: pointer;
+        color: var(--chalk-dim);
+      }
+      .star-btn.filled {
+        color: var(--accent);
+      }
 
-  .add-form{ display:flex; flex-direction:column; gap:10px; margin-top:4px; }
-  .add-row{ display:flex; gap:8px; }
-  input[type="text"]{
-    flex:1; min-width:0; background:var(--bg-card); border:1px solid var(--line);
-    color:var(--chalk); border-radius:10px; padding:12px 14px; font-size:15px;
-  }
-  input[type="text"]::placeholder{ color:var(--chalk-dim); }
-  input[type="text"]:focus, .star-btn:focus-visible, button:focus-visible, .seg button:focus-visible{
-    outline:2px solid var(--accent); outline-offset:2px;
-  }
-  .level-picker{ display:flex; align-items:center; gap:6px; justify-content:center; }
-  .level-picker .label{ font-size:12px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:1px; margin-right:4px; }
-  .level-picker .star-btn{ font-size:22px; }
+      .add-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      input[type="text"],
+      input[type="password"] {
+        flex: 1;
+        min-width: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        color: var(--chalk);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 15px;
+        width: 100%;
+      }
+      input::placeholder {
+        color: var(--chalk-dim);
+      }
+      input[type="file"] {
+        color: var(--chalk-dim);
+        font-size: 13px;
+      }
+      input:focus,
+      .star-btn:focus-visible,
+      button:focus-visible,
+      .seg button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
 
-  .btn{
-    border:none; border-radius:10px; padding:12px 16px; font-weight:800;
-    font-size:14px; text-transform:uppercase; letter-spacing:.5px; cursor:pointer;
-  }
-  .btn-add{ background:var(--accent); color:var(--accent-ink); white-space:nowrap; }
-  .btn-primary{
-    width:100%; background:var(--accent); color:var(--accent-ink);
-    font-size:17px; padding:16px; border-radius:14px; box-shadow:var(--shadow);
-  }
-  .btn-primary:disabled{ opacity:.4; }
-  .btn-ghost{
-    background:transparent; color:var(--chalk-dim); border:1px solid var(--line);
-    font-size:12px; padding:8px 12px;
-  }
+      .btn {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-weight: 800;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+      }
+      .btn-primary {
+        width: 100%;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-size: 17px;
+        padding: 16px;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+      .btn-primary:disabled {
+        opacity: 0.4;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--chalk-dim);
+        border: 1px solid var(--line);
+        font-size: 12px;
+        padding: 8px 12px;
+      }
 
-  .io-row{ display:flex; gap:8px; margin-top:12px; }
-  .io-row .btn-ghost{ flex:1; }
+      .seg {
+        display: flex;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 3px;
+        gap: 3px;
+      }
+      .seg button {
+        flex: 1;
+        background: none;
+        border: none;
+        color: var(--chalk-dim);
+        padding: 8px 0;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .seg button.active {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
 
-  .seg{ display:flex; background:var(--bg-card); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; }
-  .seg button{
-    flex:1; background:none; border:none; color:var(--chalk-dim); padding:8px 0;
-    border-radius:8px; font-weight:700; font-size:14px; cursor:pointer;
-  }
-  .seg button.active{ background:var(--accent); color:var(--accent-ink); }
+      .results {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .team-card {
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .team-card h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .team-card h3 .avg {
+        font-size: 12px;
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .team-card ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .team-card li {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px dashed var(--line);
+        font-size: 14px;
+      }
+      .team-card li:last-child {
+        border-bottom: none;
+      }
+      .team-card li .lvl {
+        color: var(--chalk-dim);
+      }
 
-  .results{ display:flex; flex-direction:column; gap:12px; }
-  .team-card{ background:var(--bg-card); border:1px solid var(--line); border-radius:14px; padding:14px; }
-  .team-card h3{
-    margin:0 0 10px; font-size:15px; text-transform:uppercase; letter-spacing:1px;
-    display:flex; justify-content:space-between; align-items:baseline;
-  }
-  .team-card h3 .avg{ font-size:12px; color:var(--accent); font-weight:700; letter-spacing:0; text-transform:none; }
-  .team-card ul{ list-style:none; margin:0; padding:0; }
-  .team-card li{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px; }
-  .team-card li:last-child{ border-bottom:none; }
-  .team-card li .lvl{ color:var(--chalk-dim); }
+      .actions-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .actions-row .btn {
+        flex: 1;
+      }
 
-  .actions-row{ display:flex; gap:8px; margin-top:14px; }
-  .actions-row .btn{ flex:1; }
+      .vote-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .vote-field label {
+        display: block;
+        font-size: 12px;
+        color: var(--chalk-dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+        font-weight: 700;
+      }
+      select {
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        color: var(--chalk);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 15px;
+        appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2393A9C7' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+      }
+      .vote-status {
+        font-size: 13px;
+        color: var(--chalk-dim);
+        text-align: center;
+        padding: 8px 0;
+      }
+      .vote-status.ok {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .vote-status.err {
+        color: #e88;
+        font-weight: 700;
+      }
+      .vote-results {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .vote-block h3 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--chalk-dim);
+      }
+      .vote-block.craque h3 {
+        color: var(--accent);
+      }
+      .vote-rank {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 9px 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+      }
+      .vote-rank .n {
+        font-weight: 800;
+        color: var(--chalk-dim);
+        margin-right: 8px;
+      }
+      .vote-rank .votos {
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 12px;
+      }
+      .config-warning {
+        background: var(--bg-card);
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 13px;
+        color: var(--chalk-dim);
+        line-height: 1.6;
+      }
 
-  .install-tip{ font-size:12px; color:var(--chalk-dim); text-align:center; margin-top:18px; line-height:1.5; }
-  footer{ text-align:center; padding:20px 0 4px; color:var(--chalk-dim); font-size:11px; opacity:.6; }
-  .toast{
-    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
-    background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:13px;
-    padding:10px 18px; border-radius:999px; box-shadow:var(--shadow); opacity:0; pointer-events:none;
-    transition:opacity .2s, transform .2s; z-index:10;
-  }
-  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-</style>
-</head>
-<body>
-<svg class="field-lines" viewBox="0 0 640 900" preserveAspectRatio="xMidYMin slice">
-  <line x1="0" y1="140" x2="640" y2="140" stroke="#2F4E7A" stroke-width="2"/>
-  <circle cx="320" cy="140" r="70" fill="none" stroke="#2F4E7A" stroke-width="2"/>
-</svg>
+      .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .app-header .name {
+        font-weight: 800;
+        font-size: 16px;
+      }
+      .app-header .sub {
+        font-size: 12px;
+        color: var(--chalk-dim);
+      }
+      .app-header .actions {
+        display: flex;
+        gap: 8px;
+      }
+      .link-btn {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-size: 12px;
+        text-decoration: underline;
+        cursor: pointer;
+        padding: 0;
+        margin-top: 8px;
+        display: block;
+        text-align: center;
+        width: 100%;
+      }
 
-<div class="wrap">
-  <header>
-    <span class="whistle">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 8h6l3-3 3 3h5a3 3 0 0 1 0 6h-1.1a5 5 0 1 1-9.8-2H8L5 12H2V8Z" stroke="#F2C14E" stroke-width="1.6" stroke-linejoin="round"/>
-        <circle cx="14.5" cy="12.5" r="2.2" stroke="#F2C14E" stroke-width="1.6"/>
-      </svg>
-    </span>
-    <h1>Sortea<span>dor</span> de Times</h1>
-    <p class="subtitle">Elenco fixo, só marcar quem joga hoje</p>
-  </header>
+      .install-tip {
+        font-size: 12px;
+        color: var(--chalk-dim);
+        text-align: center;
+        margin-top: 18px;
+        line-height: 1.5;
+      }
+      footer {
+        text-align: center;
+        padding: 20px 0 4px;
+        color: var(--chalk-dim);
+        font-size: 11px;
+        opacity: 0.6;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 700;
+        font-size: 13px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        box-shadow: var(--shadow);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        z-index: 10;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      class="field-lines"
+      viewBox="0 0 640 900"
+      preserveAspectRatio="xMidYMin slice"
+    >
+      <line
+        x1="0"
+        y1="140"
+        x2="640"
+        y2="140"
+        stroke="#2F4E7A"
+        stroke-width="2"
+      />
+      <circle
+        cx="320"
+        cy="140"
+        r="70"
+        fill="none"
+        stroke="#2F4E7A"
+        stroke-width="2"
+      />
+    </svg>
 
-  <section class="panel">
-    <h2>Elenco <span class="count" id="playerCount">0</span><span class="subcount" id="playingCount"></span></h2>
-    <div class="quick-select">
-      <button type="button" id="selectAllBtn">Marcar todos</button>
-      <button type="button" id="selectNoneBtn">Desmarcar todos</button>
-    </div>
-    <div id="playerList"></div>
-    <div id="emptyState" class="empty">
-      <span class="ball">⚽</span>
-      Nenhum jogador ainda.<br>Adicione abaixo ou importe sua lista em .txt.
-    </div>
+    <div class="wrap">
+      <header>
+        <span class="whistle">
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 8h6l3-3 3 3h5a3 3 0 0 1 0 6h-1.1a5 5 0 1 1-9.8-2H8L5 12H2V8Z"
+              stroke="#F2C14E"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            />
+            <circle
+              cx="14.5"
+              cy="12.5"
+              r="2.2"
+              stroke="#F2C14E"
+              stroke-width="1.6"
+            />
+          </svg>
+        </span>
+        <h1>Sortea<span>dor</span> de Times</h1>
+        <p class="subtitle">Grupo compartilhado, elenco sempre à mão</p>
+      </header>
 
-    <div class="add-form">
-      <div class="level-picker" id="newLevelPicker">
-        <span class="label">Nível</span>
+      <div
+        class="panel config-warning"
+        id="firebaseWarning"
+        style="display: none"
+      >
+        O Firebase ainda não foi configurado. Siga o arquivo
+        <strong>como-configurar-firebase.md</strong> e cole as chaves na
+        constante <code>FIREBASE_CONFIG</code> no topo do código deste arquivo.
       </div>
-      <div class="add-row">
-        <input type="text" id="nameInput" placeholder="Nome do jogador" maxlength="24">
-        <button class="btn btn-add" id="addBtn">Adicionar</button>
-      </div>
+
+      <section class="panel" id="screenGroupAuth" style="display: none">
+        <div class="seg" id="groupAuthTabs">
+          <button type="button" data-tab="entrar" class="active">
+            Entrar no Grupo
+          </button>
+          <button type="button" data-tab="criar">Criar Grupo</button>
+        </div>
+
+        <form id="joinGroupForm" class="add-form" style="margin-top: 14px">
+          <input
+            type="text"
+            id="joinGroupId"
+            placeholder="ID do grupo"
+            maxlength="40"
+          />
+          <input
+            type="password"
+            id="joinGroupSenha"
+            placeholder="Senha do grupo"
+          />
+          <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+
+        <form
+          id="createGroupForm"
+          class="add-form"
+          style="margin-top: 14px; display: none"
+        >
+          <input
+            type="text"
+            id="createGroupName"
+            placeholder="Nome do grupo (ex: Pelada de Sexta)"
+            maxlength="40"
+          />
+          <input
+            type="password"
+            id="createGroupSenha"
+            placeholder="Crie uma senha para o grupo"
+          />
+          <button type="submit" class="btn btn-primary">Criar grupo</button>
+        </form>
+
+        <p class="vote-status" id="groupAuthStatus"></p>
+      </section>
+
+      <section class="panel" id="screenPlayerAuth" style="display: none">
+        <h2 id="playerAuthGroupName">Entrar no grupo</h2>
+        <form id="playerAuthForm" class="add-form">
+          <input
+            type="text"
+            id="playerAuthNome"
+            placeholder="Seu nome"
+            maxlength="24"
+          />
+          <input
+            type="password"
+            id="playerAuthSenha"
+            placeholder="Crie ou digite sua senha pessoal"
+          />
+          <div class="vote-field">
+            <label for="playerAuthFoto">Foto (opcional)</label>
+            <input type="file" id="playerAuthFoto" accept="image/*" />
+          </div>
+          <button type="submit" class="btn btn-primary">Entrar no grupo</button>
+        </form>
+        <p class="vote-status" id="playerAuthStatus"></p>
+        <button type="button" class="link-btn" id="trocarGrupoBtn">
+          Não é este grupo? Trocar de grupo
+        </button>
+      </section>
+
+      <section id="screenApp" style="display: none">
+        <div class="panel app-header">
+          <div>
+            <div class="name" id="appGroupName"></div>
+            <div class="sub">Você: <span id="appPlayerName"></span></div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-ghost" id="inviteBtn">Convite</button>
+            <button class="btn btn-ghost" id="logoutBtn">Sair</button>
+          </div>
+        </div>
+
+        <section class="panel">
+          <h2>Elenco <span class="count" id="elencoCount">0</span></h2>
+          <div class="quick-select">
+            <button type="button" id="selectAllBtn">Marcar todos</button>
+            <button type="button" id="selectNoneBtn">Desmarcar todos</button>
+          </div>
+          <div id="elencoList"></div>
+          <div id="elencoEmpty" class="empty" style="display: none">
+            <span class="ball">⚽</span>
+            Só você por aqui ainda.<br />Compartilhe o convite pra chamar a
+            turma.
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Avaliar Jogadores</h2>
+          <p class="subtitle" style="margin: 0 0 10px">
+            Dê uma nota de 1 a 5 pra cada colega. A nota final é a média das
+            avaliações de todo mundo.
+          </p>
+          <div id="avaliarList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Times</h2>
+          <div class="seg" id="teamSeg"></div>
+        </section>
+
+        <button class="btn btn-primary" id="sortearBtn">Sortear Times</button>
+
+        <section id="resultsSection" style="display: none; margin-top: 18px">
+          <div class="results" id="resultsList"></div>
+          <div class="actions-row">
+            <button class="btn btn-ghost" id="reshuffleBtn">
+              Sortear de novo
+            </button>
+            <button class="btn btn-ghost" id="clearResultsBtn">
+              Ocultar times
+            </button>
+          </div>
+        </section>
+
+        <section class="panel" id="votingPanel" style="margin-top: 16px">
+          <h2>Votação do Racha</h2>
+          <form class="vote-form" id="voteForm">
+            <div class="vote-field">
+              <label for="craqueSelect">Craque da Partida ⭐</label>
+              <select id="craqueSelect" required></select>
+            </div>
+            <div class="vote-field">
+              <label for="bagreSelect">Bagre da Partida 🐟</label>
+              <select id="bagreSelect" required></select>
+            </div>
+            <button type="submit" class="btn btn-primary" id="submitVoteBtn">
+              Votar
+            </button>
+          </form>
+          <p class="vote-status" id="voteStatus"></p>
+          <div class="actions-row">
+            <button
+              class="btn btn-ghost"
+              id="refreshResultsBtn"
+              style="flex: 1"
+            >
+              Ver resultados
+            </button>
+          </div>
+          <div
+            class="vote-results"
+            id="voteResults"
+            style="margin-top: 14px"
+          ></div>
+        </section>
+      </section>
+
+      <p class="install-tip" id="installTip"></p>
+      <footer>Feito para o rachão de sexta ⚽</footer>
     </div>
 
-    <div class="io-row">
-      <button class="btn btn-ghost" id="importBtn">Importar .txt</button>
-      <button class="btn btn-ghost" id="exportBtn">Exportar .txt</button>
-    </div>
-    <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
-  </section>
+    <div class="toast" id="toast"></div>
 
-  <section class="panel">
-    <h2>Times</h2>
-    <div class="seg" id="teamSeg"></div>
-  </section>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
-  <button class="btn btn-primary" id="sortearBtn">Sortear Times</button>
+    <script>
+      (function () {
+        "use strict";
 
-  <section id="resultsSection" style="display:none; margin-top:18px;">
-    <div class="results" id="resultsList"></div>
-    <div class="actions-row">
-      <button class="btn btn-ghost" id="reshuffleBtn">Sortear de novo</button>
-      <button class="btn btn-ghost" id="clearResultsBtn">Ocultar times</button>
-    </div>
-  </section>
+        // ====== CONFIGURAÇÃO DO FIREBASE ======
+        // Siga "como-configurar-firebase.md" e cole seus valores aqui.
+        var FIREBASE_CONFIG = {
+          apiKey: "AIzaSyCo4F-OQIwCFJuwjkIvCkJNr4qyDcC8iYk",
+          authDomain: "fut10-a1b06.firebaseapp.com",
+          projectId: "fut10-a1b06",
+          storageBucket: "fut10-a1b06.firebasestorage.app",
+          messagingSenderId: "303224003723",
+          appId: "1:303224003723:web:7bed8d36645b11a7ce088e",
+          measurementId: "G-2LXZQKB0GN",
+        };
 
-  <p class="install-tip" id="installTip"></p>
-  <footer>Feito para o rachão de sexta ⚽</footer>
-</div>
+        var db, storage;
+        var currentGrupoId = null;
+        var currentGrupoNome = null;
+        var currentJogadorId = null;
+        var currentJogadorNome = null;
+        var elencoCache = [];
+        var numTeams = 2;
 
-<div class="toast" id="toast"></div>
-
-<script>
-(function(){
-  "use strict";
-  var STORAGE_KEY = "sorteador-times-state-v2";
-
-  var state = {
-    players: [], // {id, name, level, selected}
-    numTeams: 2,
-    newLevel: 3
-  };
-
-  function loadState(){
-    try{
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        var parsed = JSON.parse(raw);
-        if(parsed && Array.isArray(parsed.players)){
-          state.players = parsed.players.map(function(p){
-            return { id:p.id, name:p.name, level:p.level||3, selected: p.selected !== false };
+        function escapeHtml(str) {
+          return String(str).replace(/[&<>"']/g, function (c) {
+            return {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[c];
           });
-          state.numTeams = parsed.numTeams || 2;
-          return;
         }
-      }
-      // migração de versão antiga (v1), se existir
-      var old = localStorage.getItem("sorteador-times-state-v1");
-      if(old){
-        var op = JSON.parse(old);
-        if(op && Array.isArray(op.players)){
-          state.players = op.players.map(function(p){ return {id:p.id, name:p.name, level:p.level||3, selected:true}; });
-          state.numTeams = op.numTeams || 2;
+        function slugify(str) {
+          return String(str)
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
         }
-      }
-    }catch(e){}
-  }
-  function saveState(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ players: state.players, numTeams: state.numTeams }));
-    }catch(e){}
-  }
+        function showToast(msg) {
+          var t = document.getElementById("toast");
+          t.textContent = msg;
+          t.classList.add("show");
+          clearTimeout(showToast._tm);
+          showToast._tm = setTimeout(function () {
+            t.classList.remove("show");
+          }, 2200);
+        }
+        function getRodadaId() {
+          var d = new Date();
+          return (
+            d.getFullYear() +
+            "-" +
+            String(d.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(d.getDate()).padStart(2, "0")
+          );
+        }
 
-  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+        // ---- sessão local (por navegador) ----
+        function getGrupoId() {
+          return localStorage.getItem("grupoId") || null;
+        }
+        function setGrupoId(id) {
+          localStorage.setItem("grupoId", id);
+        }
+        function clearGrupoSession() {
+          localStorage.removeItem("grupoId");
+        }
+        function getJogadorSession(grupoId) {
+          var raw = localStorage.getItem("jogador_" + grupoId);
+          return raw ? JSON.parse(raw) : null;
+        }
+        function setJogadorSession(grupoId, jogador) {
+          localStorage.setItem(
+            "jogador_" + grupoId,
+            JSON.stringify({ id: jogador.id, nome: jogador.nome }),
+          );
+        }
+        function clearJogadorSession(grupoId) {
+          localStorage.removeItem("jogador_" + grupoId);
+        }
 
-  function showToast(msg){
-    var t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    clearTimeout(showToast._tm);
-    showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 2200);
-  }
+        function showScreen(id) {
+          ["screenGroupAuth", "screenPlayerAuth", "screenApp"].forEach(
+            function (s) {
+              document.getElementById(s).style.display =
+                s === id ? "block" : "none";
+            },
+          );
+        }
 
-  function starsHtml(level, playerId){
-    var html = "";
-    for(var i=1;i<=5;i++){
-      var filled = i <= level;
-      html += '<button type="button" class="star-btn' + (filled?' filled':'') + '" ' +
-              'data-player="' + playerId + '" data-level="' + i + '" aria-label="Nível ' + i + '">' +
-              (filled ? '★' : '☆') + '</button>';
-    }
-    return html;
-  }
+        function initFirebase() {
+          firebase.initializeApp(FIREBASE_CONFIG);
+          db = firebase.firestore();
+          try {
+            storage = firebase.storage();
+          } catch (e) {
+            storage = null;
+          }
+        }
 
-  function renderNewLevelPicker(){
-    var el = document.getElementById("newLevelPicker");
-    var html = '<span class="label">Nível</span>';
-    for(var i=1;i<=5;i++){
-      var filled = i <= state.newLevel;
-      html += '<button type="button" class="star-btn' + (filled?' filled':'') + '" data-newlevel="' + i + '" aria-label="Nível ' + i + '">' + (filled?'★':'☆') + '</button>';
-    }
-    el.innerHTML = html;
-  }
+        function boot() {
+          if (
+            !FIREBASE_CONFIG.apiKey ||
+            FIREBASE_CONFIG.apiKey === "AIzaSyCo4F-OQIwCFJuwjkIvCkJNr4qyDcC8iYk"
+          ) {
+            document.getElementById("firebaseWarning").style.display = "block";
+            return;
+          }
+          initFirebase();
 
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, function(c){
-      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
-    });
-  }
+          var params = new URLSearchParams(window.location.search);
+          var grupoFromLink = params.get("grupo");
 
-  function renderPlayers(){
-    var list = document.getElementById("playerList");
-    var empty = document.getElementById("emptyState");
-    var count = document.getElementById("playerCount");
-    var playingCount = document.getElementById("playingCount");
-    count.textContent = state.players.length;
-    var selectedN = state.players.filter(function(p){ return p.selected; }).length;
-    playingCount.textContent = state.players.length ? (selectedN + " jogando hoje") : "";
+          if (grupoFromLink) {
+            checkGroupExistsThenGoToPlayerAuth(grupoFromLink);
+            return;
+          }
 
-    if(state.players.length === 0){
-      list.innerHTML = "";
-      empty.style.display = "block";
-      return;
-    }
-    empty.style.display = "none";
+          var savedGrupoId = getGrupoId();
+          if (savedGrupoId) {
+            currentGrupoId = savedGrupoId;
+            db.collection("grupos")
+              .doc(savedGrupoId)
+              .get()
+              .then(function (doc) {
+                if (!doc.exists) {
+                  clearGrupoSession();
+                  showScreen("screenGroupAuth");
+                  return;
+                }
+                currentGrupoNome = doc.data().nome;
+                var jogadorSession = getJogadorSession(savedGrupoId);
+                if (jogadorSession) {
+                  currentJogadorId = jogadorSession.id;
+                  currentJogadorNome = jogadorSession.nome;
+                  startApp();
+                } else {
+                  goToPlayerAuthScreen();
+                }
+              });
+            return;
+          }
 
-    var html = "";
-    state.players.forEach(function(p, idx){
-      html += '<div class="player-row' + (p.selected ? '' : ' off') + '">' +
-        '<div class="jersey" data-toggle="' + p.id + '" role="button" aria-pressed="' + p.selected + '" aria-label="Joga hoje">' + (idx+1) + '</div>' +
-        '<div class="player-info">' +
-          '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
-          '<div class="stars">' + starsHtml(p.level, p.id) + '</div>' +
-        '</div>' +
-        '<button type="button" class="remove-btn" data-remove="' + p.id + '" aria-label="Remover ' + escapeHtml(p.name) + '">✕</button>' +
-      '</div>';
-    });
-    list.innerHTML = html;
-  }
+          showScreen("screenGroupAuth");
+        }
 
-  function renderTeamSeg(){
-    var seg = document.getElementById("teamSeg");
-    var options = [2,3,4,5,6];
-    var html = "";
-    options.forEach(function(n){
-      html += '<button type="button" data-teams="' + n + '" class="' + (state.numTeams===n?'active':'') + '">' + n + '</button>';
-    });
-    seg.innerHTML = html;
-  }
+        function checkGroupExistsThenGoToPlayerAuth(grupoId) {
+          db.collection("grupos")
+            .doc(grupoId)
+            .get()
+            .then(function (doc) {
+              if (!doc.exists) {
+                showScreen("screenGroupAuth");
+                document.getElementById("groupAuthStatus").textContent =
+                  "Link inválido: grupo não encontrado.";
+                return;
+              }
+              currentGrupoId = grupoId;
+              currentGrupoNome = doc.data().nome;
+              setGrupoId(grupoId);
+              goToPlayerAuthScreen();
+            })
+            .catch(function () {
+              showScreen("screenGroupAuth");
+              document.getElementById("groupAuthStatus").textContent =
+                "Erro ao conectar. Tente novamente.";
+            });
+        }
 
-  function selectedPlayers(){
-    return state.players.filter(function(p){ return p.selected; });
-  }
+        function goToPlayerAuthScreen() {
+          document.getElementById("playerAuthGroupName").textContent =
+            "Grupo: " + (currentGrupoNome || currentGrupoId);
+          showScreen("screenPlayerAuth");
+        }
 
-  function updateSortearBtn(){
-    var btn = document.getElementById("sortearBtn");
-    var n = selectedPlayers().length;
-    btn.disabled = n < state.numTeams;
-    btn.textContent = n < state.numTeams ? "Marque mais jogadores" : "Sortear Times";
-  }
+        // ---- autenticação de grupo ----
+        document
+          .getElementById("groupAuthTabs")
+          .addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-tab]");
+            if (!btn) return;
+            document
+              .querySelectorAll("#groupAuthTabs button")
+              .forEach(function (b) {
+                b.classList.remove("active");
+              });
+            btn.classList.add("active");
+            var tab = btn.getAttribute("data-tab");
+            document.getElementById("joinGroupForm").style.display =
+              tab === "entrar" ? "flex" : "none";
+            document.getElementById("createGroupForm").style.display =
+              tab === "criar" ? "flex" : "none";
+          });
 
-  function sortearTimes(){
-    var n = state.numTeams;
-    var teams = [];
-    for(var i=0;i<n;i++) teams.push({ name: "Time " + String.fromCharCode(65+i), players: [], total: 0 });
+        document
+          .getElementById("joinGroupForm")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+            var id = slugify(document.getElementById("joinGroupId").value);
+            var senha = document.getElementById("joinGroupSenha").value;
+            var statusEl = document.getElementById("groupAuthStatus");
+            statusEl.className = "vote-status";
+            if (!id || !senha) {
+              statusEl.textContent = "Preencha ID e senha.";
+              return;
+            }
 
-    var pool = selectedPlayers();
-    var byLevel = {};
-    pool.forEach(function(p){
-      byLevel[p.level] = byLevel[p.level] || [];
-      byLevel[p.level].push(p);
-    });
-    var ordered = [];
-    Object.keys(byLevel).sort(function(a,b){ return b-a; }).forEach(function(lvl){
-      var arr = byLevel[lvl].slice();
-      for(var i=arr.length-1;i>0;i--){
-        var j = Math.floor(Math.random()*(i+1));
-        var tmp = arr[i]; arr[i]=arr[j]; arr[j]=tmp;
-      }
-      ordered = ordered.concat(arr);
-    });
+            statusEl.textContent = "Verificando...";
+            db.collection("grupos")
+              .doc(id)
+              .get()
+              .then(function (doc) {
+                if (!doc.exists) {
+                  statusEl.textContent = "Grupo não encontrado.";
+                  return;
+                }
+                var data = doc.data();
+                if (data.senha !== senha) {
+                  statusEl.textContent = "Senha incorreta.";
+                  return;
+                }
+                currentGrupoId = id;
+                currentGrupoNome = data.nome;
+                setGrupoId(id);
+                statusEl.textContent = "";
+                goToPlayerAuthScreen();
+              })
+              .catch(function () {
+                statusEl.textContent = "Erro ao conectar.";
+              });
+          });
 
-    var dir = 1, teamIdx = 0;
-    ordered.forEach(function(p){
-      teams[teamIdx].players.push(p);
-      teams[teamIdx].total += p.level;
-      if(dir === 1){
-        teamIdx++;
-        if(teamIdx === n){ teamIdx = n-1; dir = -1; }
-      } else {
-        teamIdx--;
-        if(teamIdx === -1){ teamIdx = 0; dir = 1; }
-      }
-    });
-    return teams;
-  }
+        document
+          .getElementById("createGroupForm")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+            var nome = document.getElementById("createGroupName").value.trim();
+            var senha = document.getElementById("createGroupSenha").value;
+            var statusEl = document.getElementById("groupAuthStatus");
+            statusEl.className = "vote-status";
+            if (!nome || !senha) {
+              statusEl.textContent = "Preencha nome e senha.";
+              return;
+            }
+            var id = slugify(nome);
+            if (!id) {
+              statusEl.textContent = "Nome inválido.";
+              return;
+            }
 
-  function renderResults(teams){
-    var section = document.getElementById("resultsSection");
-    var list = document.getElementById("resultsList");
-    var html = "";
-    teams.forEach(function(t){
-      var avg = t.players.length ? (t.total / t.players.length).toFixed(1) : "0.0";
-      html += '<div class="team-card">' +
-        '<h3>' + t.name + ' <span class="avg">média ' + avg + '</span></h3>' +
-        '<ul>' + t.players.map(function(p){
-          return '<li><span>' + escapeHtml(p.name) + '</span><span class="lvl">' + '★'.repeat(p.level) + '</span></li>';
-        }).join("") + '</ul>' +
-      '</div>';
-    });
-    list.innerHTML = html;
-    section.style.display = "block";
-  }
+            statusEl.textContent = "Criando...";
+            db.collection("grupos")
+              .doc(id)
+              .get()
+              .then(function (doc) {
+                if (doc.exists) {
+                  statusEl.textContent =
+                    "Já existe um grupo com esse nome. Escolha outro ou entre nele.";
+                  return;
+                }
+                return db
+                  .collection("grupos")
+                  .doc(id)
+                  .set({
+                    nome: nome,
+                    senha: senha,
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                  })
+                  .then(function () {
+                    currentGrupoId = id;
+                    currentGrupoNome = nome;
+                    setGrupoId(id);
+                    statusEl.textContent = "";
+                    goToPlayerAuthScreen();
+                  });
+              })
+              .catch(function () {
+                statusEl.textContent = "Erro ao conectar.";
+              });
+          });
 
-  function findByNameCI(name){
-    var lower = name.trim().toLowerCase();
-    return state.players.find(function(p){ return p.name.trim().toLowerCase() === lower; });
-  }
+        document
+          .getElementById("trocarGrupoBtn")
+          .addEventListener("click", function () {
+            clearGrupoSession();
+            currentGrupoId = null;
+            currentGrupoNome = null;
+            document.getElementById("groupAuthStatus").textContent = "";
+            showScreen("screenGroupAuth");
+          });
 
-  function parseImportLine(line){
-    line = line.trim();
-    if(!line) return null;
-    var name, level = 3;
-    if(line.indexOf(",") !== -1){
-      var parts = line.split(",");
-      name = parts[0].trim();
-      var lvl = parseInt(parts[1], 10);
-      if(!isNaN(lvl) && lvl>=1 && lvl<=5) level = lvl;
-    } else {
-      var m = line.match(/(\d)\s*$/);
-      if(m){
-        var n = parseInt(m[1], 10);
-        if(n>=1 && n<=5){ level = n; name = line.slice(0, m.index); }
-      }
-      if(name === undefined) name = line;
-      name = name.replace(/[\-\(\)\s]+$/,'').trim();
-    }
-    name = name.replace(/^[\-\(\)\s]+/,'').trim();
-    if(!name) return null;
-    return { name: name, level: level };
-  }
+        // ---- autenticação de jogador ----
+        document
+          .getElementById("playerAuthForm")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+            var nome = document.getElementById("playerAuthNome").value.trim();
+            var senha = document.getElementById("playerAuthSenha").value;
+            var fotoInput = document.getElementById("playerAuthFoto");
+            var statusEl = document.getElementById("playerAuthStatus");
+            statusEl.className = "vote-status";
+            if (!nome || !senha) {
+              statusEl.textContent = "Preencha nome e senha.";
+              return;
+            }
 
-  function importText(text){
-    var lines = text.split(/\r?\n/);
-    var added = 0, updated = 0;
-    lines.forEach(function(line){
-      var parsed = parseImportLine(line);
-      if(!parsed) return;
-      var existing = findByNameCI(parsed.name);
-      if(existing){
-        existing.level = parsed.level;
-        updated++;
-      } else {
-        state.players.push({ id: uid(), name: parsed.name, level: parsed.level, selected: true });
-        added++;
-      }
-    });
-    saveState();
-    renderPlayers();
-    renderTeamSeg();
-    updateSortearBtn();
-    showToast(added + " adicionado(s), " + updated + " atualizado(s)");
-  }
+            var jogadoresRef = db
+              .collection("grupos")
+              .doc(currentGrupoId)
+              .collection("jogadores");
+            var jogadorId = slugify(nome);
+            statusEl.textContent = "Verificando...";
 
-  function exportText(){
-    var lines = state.players.map(function(p){ return p.name + "," + p.level; });
-    var blob = new Blob([lines.join("\n")], { type: "text/plain" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "elenco-times.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-  }
+            jogadoresRef
+              .doc(jogadorId)
+              .get()
+              .then(function (doc) {
+                if (doc.exists) {
+                  var data = doc.data();
+                  if (data.senha !== senha) {
+                    statusEl.textContent =
+                      "Esse nome já existe com outra senha.";
+                    return null;
+                  }
+                  currentJogadorId = jogadorId;
+                  currentJogadorNome = data.nome;
+                  setJogadorSession(currentGrupoId, {
+                    id: jogadorId,
+                    nome: data.nome,
+                  });
+                  return uploadFotoIfAny(jogadorId, fotoInput).then(startApp);
+                } else {
+                  var novoJogador = {
+                    nome: nome,
+                    senha: senha,
+                    selecionado: true,
+                    notaMedia: 0,
+                    totalAvaliacoes: 0,
+                    fotoUrl: "",
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                  };
+                  return jogadoresRef
+                    .doc(jogadorId)
+                    .set(novoJogador)
+                    .then(function () {
+                      currentJogadorId = jogadorId;
+                      currentJogadorNome = nome;
+                      setJogadorSession(currentGrupoId, {
+                        id: jogadorId,
+                        nome: nome,
+                      });
+                      return uploadFotoIfAny(jogadorId, fotoInput);
+                    })
+                    .then(startApp);
+                }
+              })
+              .catch(function () {
+                statusEl.textContent = "Erro ao conectar.";
+              });
+          });
 
-  // eventos
-  document.getElementById("addBtn").addEventListener("click", function(){
-    var input = document.getElementById("nameInput");
-    var name = input.value.trim();
-    if(!name) { input.focus(); return; }
-    var existing = findByNameCI(name);
-    if(existing){
-      existing.level = state.newLevel;
-      existing.selected = true;
-    } else {
-      state.players.push({ id: uid(), name: name, level: state.newLevel, selected: true });
-    }
-    input.value = "";
-    state.newLevel = 3;
-    renderNewLevelPicker();
-    saveState();
-    renderPlayers();
-    renderTeamSeg();
-    updateSortearBtn();
-    input.focus();
-  });
+        function uploadFotoIfAny(jogadorId, fotoInput) {
+          if (!storage || !fotoInput.files || !fotoInput.files[0])
+            return Promise.resolve();
+          return resizeImageFile(fotoInput.files[0], 300)
+            .then(function (blob) {
+              var ref = storage
+                .ref()
+                .child(
+                  "grupos/" + currentGrupoId + "/fotos/" + jogadorId + ".jpg",
+                );
+              return ref
+                .put(blob)
+                .then(function () {
+                  return ref.getDownloadURL();
+                })
+                .then(function (url) {
+                  return db
+                    .collection("grupos")
+                    .doc(currentGrupoId)
+                    .collection("jogadores")
+                    .doc(jogadorId)
+                    .update({ fotoUrl: url });
+                });
+            })
+            .catch(function () {
+              /* falha no upload não bloqueia o acesso */
+            });
+        }
 
-  document.getElementById("nameInput").addEventListener("keydown", function(e){
-    if(e.key === "Enter"){ document.getElementById("addBtn").click(); }
-  });
+        function resizeImageFile(file, maxSize) {
+          return new Promise(function (resolve, reject) {
+            var img = new Image();
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            img.onload = function () {
+              var canvas = document.createElement("canvas");
+              var scale = Math.min(
+                1,
+                maxSize / Math.max(img.width, img.height),
+              );
+              canvas.width = img.width * scale;
+              canvas.height = img.height * scale;
+              canvas
+                .getContext("2d")
+                .drawImage(img, 0, 0, canvas.width, canvas.height);
+              canvas.toBlob(
+                function (blob) {
+                  resolve(blob);
+                },
+                "image/jpeg",
+                0.85,
+              );
+            };
+            img.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
 
-  document.getElementById("newLevelPicker").addEventListener("click", function(e){
-    var btn = e.target.closest("[data-newlevel]");
-    if(!btn) return;
-    state.newLevel = parseInt(btn.getAttribute("data-newlevel"), 10);
-    renderNewLevelPicker();
-  });
+        // ---- app principal ----
+        function startApp() {
+          document.getElementById("appGroupName").textContent =
+            currentGrupoNome || currentGrupoId;
+          document.getElementById("appPlayerName").textContent =
+            currentJogadorNome;
+          showScreen("screenApp");
+          renderTeamSeg();
+          listenElenco();
+        }
 
-  document.getElementById("playerList").addEventListener("click", function(e){
-    var toggle = e.target.closest("[data-toggle]");
-    if(toggle){
-      var tid = toggle.getAttribute("data-toggle");
-      var tp = state.players.find(function(x){ return x.id === tid; });
-      if(tp){ tp.selected = !tp.selected; saveState(); renderPlayers(); updateSortearBtn(); }
-      return;
-    }
-    var starBtn = e.target.closest("[data-player]");
-    if(starBtn){
-      var pid = starBtn.getAttribute("data-player");
-      var lvl = parseInt(starBtn.getAttribute("data-level"), 10);
-      var p = state.players.find(function(x){ return x.id === pid; });
-      if(p){ p.level = lvl; saveState(); renderPlayers(); }
-      return;
-    }
-    var rmBtn = e.target.closest("[data-remove]");
-    if(rmBtn){
-      var rid = rmBtn.getAttribute("data-remove");
-      state.players = state.players.filter(function(x){ return x.id !== rid; });
-      saveState();
-      renderPlayers();
-      updateSortearBtn();
-    }
-  });
+        function listenElenco() {
+          db.collection("grupos")
+            .doc(currentGrupoId)
+            .collection("jogadores")
+            .onSnapshot(function (snap) {
+              elencoCache = snap.docs.map(function (d) {
+                return Object.assign({ id: d.id }, d.data());
+              });
+              renderElenco();
+              renderAvaliarList();
+              renderVotingSelects();
+              updateSortearBtn();
+              checkJaVotou();
+            });
+        }
 
-  document.getElementById("selectAllBtn").addEventListener("click", function(){
-    state.players.forEach(function(p){ p.selected = true; });
-    saveState(); renderPlayers(); updateSortearBtn();
-  });
-  document.getElementById("selectNoneBtn").addEventListener("click", function(){
-    state.players.forEach(function(p){ p.selected = false; });
-    saveState(); renderPlayers(); updateSortearBtn();
-  });
+        function renderElenco() {
+          var list = document.getElementById("elencoList");
+          var empty = document.getElementById("elencoEmpty");
+          document.getElementById("elencoCount").textContent =
+            elencoCache.length;
 
-  document.getElementById("teamSeg").addEventListener("click", function(e){
-    var btn = e.target.closest("[data-teams]");
-    if(!btn) return;
-    state.numTeams = parseInt(btn.getAttribute("data-teams"), 10);
-    saveState();
-    renderTeamSeg();
-    updateSortearBtn();
-  });
+          if (elencoCache.length <= 1) {
+            empty.style.display = elencoCache.length === 0 ? "none" : "none";
+          }
+          empty.style.display = "none";
 
-  document.getElementById("sortearBtn").addEventListener("click", function(){
-    if(selectedPlayers().length < state.numTeams) return;
-    var teams = sortearTimes();
-    renderResults(teams);
-    document.getElementById("resultsSection").scrollIntoView({behavior:"smooth", block:"start"});
-  });
+          list.innerHTML = elencoCache
+            .map(function (p, idx) {
+              var media = p.totalAvaliacoes > 0 ? p.notaMedia.toFixed(1) : null;
+              var avatar = p.fotoUrl
+                ? '<div class="jersey"><img src="' +
+                  p.fotoUrl +
+                  '" alt=""></div>'
+                : '<div class="jersey">' + (idx + 1) + "</div>";
+              return (
+                '<div class="player-row' +
+                (p.selecionado ? "" : " off") +
+                '">' +
+                '<div data-toggle-jogador="' +
+                p.id +
+                '" role="button" aria-label="Joga hoje">' +
+                avatar +
+                "</div>" +
+                '<div class="player-info">' +
+                '<div class="player-name">' +
+                escapeHtml(p.nome) +
+                (p.id === currentJogadorId ? " (você)" : "") +
+                "</div>" +
+                '<div class="stars">' +
+                (media ? "★ " + media : "Sem avaliações ainda") +
+                "</div>" +
+                "</div>" +
+                "</div>"
+              );
+            })
+            .join("");
+        }
 
-  document.getElementById("reshuffleBtn").addEventListener("click", function(){
-    var teams = sortearTimes();
-    renderResults(teams);
-  });
+        document
+          .getElementById("elencoList")
+          .addEventListener("click", function (e) {
+            var toggle = e.target.closest("[data-toggle-jogador]");
+            if (!toggle) return;
+            var id = toggle.getAttribute("data-toggle-jogador");
+            var jogador = elencoCache.find(function (p) {
+              return p.id === id;
+            });
+            if (!jogador) return;
+            db.collection("grupos")
+              .doc(currentGrupoId)
+              .collection("jogadores")
+              .doc(id)
+              .update({ selecionado: !jogador.selecionado });
+          });
 
-  document.getElementById("clearResultsBtn").addEventListener("click", function(){
-    document.getElementById("resultsSection").style.display = "none";
-  });
+        document
+          .getElementById("selectAllBtn")
+          .addEventListener("click", function () {
+            elencoCache.forEach(function (p) {
+              db.collection("grupos")
+                .doc(currentGrupoId)
+                .collection("jogadores")
+                .doc(p.id)
+                .update({ selecionado: true });
+            });
+          });
+        document
+          .getElementById("selectNoneBtn")
+          .addEventListener("click", function () {
+            elencoCache.forEach(function (p) {
+              db.collection("grupos")
+                .doc(currentGrupoId)
+                .collection("jogadores")
+                .doc(p.id)
+                .update({ selecionado: false });
+            });
+          });
 
-  document.getElementById("importBtn").addEventListener("click", function(){
-    document.getElementById("fileInput").click();
-  });
-  document.getElementById("fileInput").addEventListener("change", function(e){
-    var file = e.target.files && e.target.files[0];
-    if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev){ importText(String(ev.target.result)); };
-    reader.readAsText(file);
-    e.target.value = "";
-  });
-  document.getElementById("exportBtn").addEventListener("click", exportText);
+        // ---- avaliações ----
+        function starsHtmlAvaliar(jogadorId, nota) {
+          var html = "";
+          for (var i = 1; i <= 5; i++) {
+            html +=
+              '<button type="button" class="star-btn' +
+              (i <= nota ? " filled" : "") +
+              '" data-avaliar="' +
+              jogadorId +
+              '" data-nota="' +
+              i +
+              '">' +
+              (i <= nota ? "★" : "☆") +
+              "</button>";
+          }
+          return html;
+        }
 
-  // dica de instalação (iOS não tem beforeinstallprompt)
-  var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-  var isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-  if(!isStandalone){
-    document.getElementById("installTip").textContent = isIOS
-      ? "Dica: toque em Compartilhar e depois em \"Adicionar à Tela de Início\" para instalar."
-      : "Dica: use o menu do navegador e escolha \"Adicionar à tela inicial\" para instalar.";
-  }
+        function renderAvaliarList() {
+          var container = document.getElementById("avaliarList");
+          var outros = elencoCache.filter(function (p) {
+            return p.id !== currentJogadorId;
+          });
+          if (outros.length === 0) {
+            container.innerHTML =
+              '<p class="vote-status">Ainda não há outros jogadores pra avaliar.</p>';
+            return;
+          }
+          container.innerHTML = outros
+            .map(function (p) {
+              return (
+                '<div class="player-row">' +
+                '<div class="player-info">' +
+                '<div class="player-name">' +
+                escapeHtml(p.nome) +
+                "</div>" +
+                '<div class="stars" id="avaliarStars-' +
+                p.id +
+                '">' +
+                starsHtmlAvaliar(p.id, 0) +
+                "</div>" +
+                "</div>" +
+                "</div>"
+              );
+            })
+            .join("");
 
-  if("serviceWorker" in navigator){
-    window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js").catch(function(){});
-    });
-  }
+          outros.forEach(function (p) {
+            db.collection("grupos")
+              .doc(currentGrupoId)
+              .collection("avaliacoes")
+              .doc(currentJogadorId + "_" + p.id)
+              .get()
+              .then(function (doc) {
+                var nota = doc.exists ? doc.data().nota : 0;
+                var el = document.getElementById("avaliarStars-" + p.id);
+                if (el) el.innerHTML = starsHtmlAvaliar(p.id, nota);
+              });
+          });
+        }
 
-  // init
-  loadState();
-  renderNewLevelPicker();
-  renderPlayers();
-  renderTeamSeg();
-  updateSortearBtn();
-})();
-</script>
-</body>
+        document
+          .getElementById("avaliarList")
+          .addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-avaliar]");
+            if (!btn) return;
+            var avaliadoId = btn.getAttribute("data-avaliar");
+            var nota = parseInt(btn.getAttribute("data-nota"), 10);
+            submitAvaliacao(avaliadoId, nota);
+          });
+
+        function submitAvaliacao(avaliadoId, nota) {
+          var docId = currentJogadorId + "_" + avaliadoId;
+          db.collection("grupos")
+            .doc(currentGrupoId)
+            .collection("avaliacoes")
+            .doc(docId)
+            .set({
+              avaliador: currentJogadorId,
+              avaliado: avaliadoId,
+              nota: nota,
+              atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            })
+            .then(function () {
+              var el = document.getElementById("avaliarStars-" + avaliadoId);
+              if (el) el.innerHTML = starsHtmlAvaliar(avaliadoId, nota);
+              recalcularMedia(avaliadoId);
+            });
+        }
+
+        function recalcularMedia(jogadorId) {
+          db.collection("grupos")
+            .doc(currentGrupoId)
+            .collection("avaliacoes")
+            .where("avaliado", "==", jogadorId)
+            .get()
+            .then(function (snap) {
+              var total = 0,
+                soma = 0;
+              snap.forEach(function (d) {
+                soma += d.data().nota;
+                total++;
+              });
+              var media = total > 0 ? soma / total : 0;
+              db.collection("grupos")
+                .doc(currentGrupoId)
+                .collection("jogadores")
+                .doc(jogadorId)
+                .update({
+                  notaMedia: media,
+                  totalAvaliacoes: total,
+                });
+            });
+        }
+
+        // ---- sorteio ----
+        function selectedPlayers() {
+          return elencoCache
+            .filter(function (p) {
+              return p.selecionado;
+            })
+            .map(function (p) {
+              var nivel =
+                p.totalAvaliacoes > 0
+                  ? Math.min(5, Math.max(1, Math.round(p.notaMedia)))
+                  : 3;
+              return { id: p.id, name: p.nome, level: nivel };
+            });
+        }
+
+        function renderTeamSeg() {
+          var seg = document.getElementById("teamSeg");
+          var options = [2, 3, 4, 5, 6];
+          seg.innerHTML = options
+            .map(function (n) {
+              return (
+                '<button type="button" data-teams="' +
+                n +
+                '" class="' +
+                (numTeams === n ? "active" : "") +
+                '">' +
+                n +
+                "</button>"
+              );
+            })
+            .join("");
+        }
+        document
+          .getElementById("teamSeg")
+          .addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-teams]");
+            if (!btn) return;
+            numTeams = parseInt(btn.getAttribute("data-teams"), 10);
+            renderTeamSeg();
+            updateSortearBtn();
+          });
+
+        function updateSortearBtn() {
+          var btn = document.getElementById("sortearBtn");
+          var n = selectedPlayers().length;
+          btn.disabled = n < numTeams;
+          btn.textContent =
+            n < numTeams ? "Marque mais jogadores" : "Sortear Times";
+        }
+
+        function sortearTimes() {
+          var n = numTeams;
+          var teams = [];
+          for (var i = 0; i < n; i++)
+            teams.push({
+              name: "Time " + String.fromCharCode(65 + i),
+              players: [],
+              total: 0,
+            });
+
+          var pool = selectedPlayers();
+          var byLevel = {};
+          pool.forEach(function (p) {
+            byLevel[p.level] = byLevel[p.level] || [];
+            byLevel[p.level].push(p);
+          });
+          var ordered = [];
+          Object.keys(byLevel)
+            .sort(function (a, b) {
+              return b - a;
+            })
+            .forEach(function (lvl) {
+              var arr = byLevel[lvl].slice();
+              for (var i = arr.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = tmp;
+              }
+              ordered = ordered.concat(arr);
+            });
+
+          var dir = 1,
+            teamIdx = 0;
+          ordered.forEach(function (p) {
+            teams[teamIdx].players.push(p);
+            teams[teamIdx].total += p.level;
+            if (dir === 1) {
+              teamIdx++;
+              if (teamIdx === n) {
+                teamIdx = n - 1;
+                dir = -1;
+              }
+            } else {
+              teamIdx--;
+              if (teamIdx === -1) {
+                teamIdx = 0;
+                dir = 1;
+              }
+            }
+          });
+          return teams;
+        }
+
+        function renderResults(teams) {
+          var section = document.getElementById("resultsSection");
+          var list = document.getElementById("resultsList");
+          list.innerHTML = teams
+            .map(function (t) {
+              var avg = t.players.length
+                ? (t.total / t.players.length).toFixed(1)
+                : "0.0";
+              return (
+                '<div class="team-card">' +
+                "<h3>" +
+                t.name +
+                ' <span class="avg">média ' +
+                avg +
+                "</span></h3>" +
+                "<ul>" +
+                t.players
+                  .map(function (p) {
+                    return (
+                      "<li><span>" +
+                      escapeHtml(p.name) +
+                      '</span><span class="lvl">' +
+                      "★".repeat(p.level) +
+                      "</span></li>"
+                    );
+                  })
+                  .join("") +
+                "</ul>" +
+                "</div>"
+              );
+            })
+            .join("");
+          section.style.display = "block";
+        }
+
+        document
+          .getElementById("sortearBtn")
+          .addEventListener("click", function () {
+            if (selectedPlayers().length < numTeams) return;
+            renderResults(sortearTimes());
+            document
+              .getElementById("resultsSection")
+              .scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        document
+          .getElementById("reshuffleBtn")
+          .addEventListener("click", function () {
+            renderResults(sortearTimes());
+          });
+        document
+          .getElementById("clearResultsBtn")
+          .addEventListener("click", function () {
+            document.getElementById("resultsSection").style.display = "none";
+          });
+
+        // ---- votação craque / bagre ----
+        function renderVotingSelects() {
+          var jogadores = selectedPlayers();
+          var optionsHtml =
+            '<option value="" disabled selected>Selecione</option>' +
+            jogadores
+              .map(function (p) {
+                return (
+                  '<option value="' +
+                  p.id +
+                  '">' +
+                  escapeHtml(p.name) +
+                  "</option>"
+                );
+              })
+              .join("");
+          document.getElementById("craqueSelect").innerHTML = optionsHtml;
+          document.getElementById("bagreSelect").innerHTML = optionsHtml;
+        }
+
+        function checkJaVotou() {
+          var rodada = getRodadaId();
+          var votoId = rodada + "_" + currentJogadorId;
+          db.collection("grupos")
+            .doc(currentGrupoId)
+            .collection("votos")
+            .doc(votoId)
+            .get()
+            .then(function (doc) {
+              var form = document.getElementById("voteForm");
+              var statusEl = document.getElementById("voteStatus");
+              if (doc.exists) {
+                form.style.display = "none";
+                statusEl.textContent = "Você já votou hoje. Obrigado!";
+                statusEl.className = "vote-status ok";
+              } else {
+                form.style.display = "flex";
+                statusEl.textContent = "";
+                statusEl.className = "vote-status";
+              }
+            });
+        }
+
+        document
+          .getElementById("voteForm")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+            var craque = document.getElementById("craqueSelect").value;
+            var bagre = document.getElementById("bagreSelect").value;
+            var statusEl = document.getElementById("voteStatus");
+            var submitBtn = document.getElementById("submitVoteBtn");
+            statusEl.className = "vote-status";
+
+            if (!craque || !bagre) {
+              statusEl.textContent = "Selecione craque e bagre.";
+              return;
+            }
+            if (craque === bagre) {
+              statusEl.textContent =
+                "Craque e bagre não podem ser o mesmo jogador.";
+              return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Enviando...";
+            var rodada = getRodadaId();
+            var votoId = rodada + "_" + currentJogadorId;
+
+            db.collection("grupos")
+              .doc(currentGrupoId)
+              .collection("votos")
+              .doc(votoId)
+              .set({
+                rodada: rodada,
+                votante: currentJogadorNome,
+                votanteId: currentJogadorId,
+                craque: craque,
+                bagre: bagre,
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+              })
+              .then(function () {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Votar";
+                statusEl.textContent = "Voto registrado! Obrigado.";
+                statusEl.className = "vote-status ok";
+                document.getElementById("voteForm").style.display = "none";
+              })
+              .catch(function () {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Votar";
+                statusEl.textContent = "Erro ao registrar voto.";
+                statusEl.className = "vote-status err";
+              });
+          });
+
+        function nomeById(id) {
+          var p = elencoCache.find(function (x) {
+            return x.id === id;
+          });
+          return p ? p.nome : id;
+        }
+
+        function renderVoteResults(craqueCounts, bagreCounts) {
+          var resultsEl = document.getElementById("voteResults");
+          var craqueRank = Object.keys(craqueCounts).sort(function (a, b) {
+            return craqueCounts[b] - craqueCounts[a];
+          });
+          var bagreRank = Object.keys(bagreCounts).sort(function (a, b) {
+            return bagreCounts[b] - bagreCounts[a];
+          });
+
+          function renderRank(rank, counts) {
+            if (rank.length === 0)
+              return '<p class="vote-status">Sem votos ainda.</p>';
+            return rank
+              .map(function (name, i) {
+                return (
+                  '<div class="vote-rank"><span><span class="n">' +
+                  (i + 1) +
+                  "º</span>" +
+                  escapeHtml(name) +
+                  '</span><span class="votos">' +
+                  counts[name] +
+                  " voto(s)</span></div>"
+                );
+              })
+              .join("");
+          }
+
+          resultsEl.innerHTML =
+            '<div class="vote-block craque"><h3>⭐ Craque da Partida</h3>' +
+            renderRank(craqueRank, craqueCounts) +
+            "</div>" +
+            '<div class="vote-block bagre"><h3>🐟 Bagre da Partida</h3>' +
+            renderRank(bagreRank, bagreCounts) +
+            "</div>";
+        }
+
+        document
+          .getElementById("refreshResultsBtn")
+          .addEventListener("click", function () {
+            var rodada = getRodadaId();
+            var resultsEl = document.getElementById("voteResults");
+            resultsEl.innerHTML = '<p class="vote-status">Carregando...</p>';
+            db.collection("grupos")
+              .doc(currentGrupoId)
+              .collection("votos")
+              .where("rodada", "==", rodada)
+              .get()
+              .then(function (snap) {
+                var craqueCounts = {},
+                  bagreCounts = {};
+                snap.forEach(function (d) {
+                  var data = d.data();
+                  var craqueNome = nomeById(data.craque);
+                  var bagreNome = nomeById(data.bagre);
+                  if (craqueNome)
+                    craqueCounts[craqueNome] =
+                      (craqueCounts[craqueNome] || 0) + 1;
+                  if (bagreNome)
+                    bagreCounts[bagreNome] = (bagreCounts[bagreNome] || 0) + 1;
+                });
+                renderVoteResults(craqueCounts, bagreCounts);
+              })
+              .catch(function () {
+                resultsEl.innerHTML =
+                  '<p class="vote-status">Erro ao buscar resultados.</p>';
+              });
+          });
+
+        // ---- convite / sair ----
+        document
+          .getElementById("inviteBtn")
+          .addEventListener("click", function () {
+            var link =
+              window.location.origin +
+              window.location.pathname +
+              "?grupo=" +
+              encodeURIComponent(currentGrupoId);
+            if (navigator.clipboard) {
+              navigator.clipboard
+                .writeText(link)
+                .then(function () {
+                  showToast("Link copiado!");
+                })
+                .catch(function () {
+                  prompt("Copie o link do convite:", link);
+                });
+            } else {
+              prompt("Copie o link do convite:", link);
+            }
+          });
+
+        document
+          .getElementById("logoutBtn")
+          .addEventListener("click", function () {
+            clearJogadorSession(currentGrupoId);
+            location.href = location.pathname;
+          });
+
+        // ---- instalação / service worker ----
+        var isStandalone =
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.navigator.standalone;
+        var isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+        if (!isStandalone) {
+          document.getElementById("installTip").textContent = isIOS
+            ? 'Dica: toque em Compartilhar e depois em "Adicionar à Tela de Início" para instalar.'
+            : 'Dica: use o menu do navegador e escolha "Adicionar à tela inicial" para instalar.';
+        }
+        if ("serviceWorker" in navigator) {
+          window.addEventListener("load", function () {
+            navigator.serviceWorker.register("sw.js").catch(function () {});
+          });
+        }
+
+        boot();
+      })();
+    </script>
+  </body>
 </html>

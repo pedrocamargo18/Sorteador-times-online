@@ -1,6 +1,6 @@
 {
-  "name": "Sorteador de Times",
-  "short_name": "Sorteio",
+  "name": "Fut10",
+  "short_name": "Fut10",
   "description": "Monte times equilibrados de futebol a partir do nível dos jogadores.",
   "start_url": "./index.html",
   "scope": "./",
